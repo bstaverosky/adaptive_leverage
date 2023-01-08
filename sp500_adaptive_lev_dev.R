@@ -10,6 +10,8 @@ library(ggthemes)
 library(xtable)
 source("/home/brian/Documents/projects/scripts/adhoc_functions.R")
 
+### THIS IS A TEST ###
+
 asset <- "SPY"
 asset <- getSymbols(asset, src = "yahoo", from = "1900-01-01", auto.assign = FALSE)
 asset <- asset[,4]
