@@ -1,4 +1,20 @@
 rm(list=ls())
+# Install libraries if not installed
+{
+list.of.packages <- c("quantmod", 
+                      "PerformanceAnalytics",
+                      "xts",
+                      "lubridate",
+                      "knitr",
+                      "kableExtra",
+                      "ggplot2",
+                      "ggthemes",
+                      "xtable")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+}
+# Load Libraries
+{
 library(quantmod)
 library(PerformanceAnalytics)
 library(xts)
@@ -9,7 +25,7 @@ library(ggplot2)
 library(ggthemes)
 library(xtable)
 source("/home/brian/Documents/projects/scripts/adhoc_functions.R")
-
+}
 ### THIS IS A TEST ###
 
 asset <- "SPY"
