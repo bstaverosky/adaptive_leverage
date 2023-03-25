@@ -9,7 +9,8 @@ list.of.packages <- c("quantmod",
                       "kableExtra",
                       "ggplot2",
                       "ggthemes",
-                      "xtable")
+                      "xtable",
+                      "dplyr")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 }
@@ -24,10 +25,10 @@ library(kableExtra)
 library(ggplot2)
 library(ggthemes)
 library(xtable)
-source("/home/brian/Documents/projects/scripts/adhoc_functions.R")
+library(dplyr)
+source("/home/bstaverosky/Documents/projects/adaptive_leverage/adhoc_functions.R")
 }
-### THIS IS A TEST ###
-
+### LOAD ASSET TO TRADE ###
 asset <- "SPY"
 asset <- getSymbols(asset, src = "yahoo", from = "1900-01-01", auto.assign = FALSE)
 asset <- asset[,4]
@@ -162,7 +163,7 @@ asset$score <- rowSums(asset[,c("smasig","volsig","p2hsig")])
 # asset$strat <- asset$Return * asset$multiplier
           
 ##### LAGGED SIGNAL FOR ROBUSTNESS #####
-asset$score <- lag(asset$score, k=1)
+asset$score <- stats::lag(asset$score, k=1)
 asset$strat <- ifelse(asset$score==0,asset$Return*0.0,
                ifelse(asset$score==1,asset$Return*0.5,
                ifelse(asset$score==2,asset$Return*0.9,
@@ -230,17 +231,15 @@ strat <- merge(asset[,c("strat", "Return")],bmk[,"Benchmark_3X_Buy_and_Hold"])
 
 mstrat <- apply.monthly(strat, Return.cumulative)
 
-if(tail(asset$score,1)==4){
+if(tail(asset$score,1)==3){
   print("Strategy is currently 3X levered")
-} else if(tail(asset$score,1)==3){
-  print("Strategy is currently 0.9 levered")
 } else if(tail(asset$score,1)==2){
-  print("Strategy is currently 0.5 levered")
+  print("Strategy is currently 0.9 levered")
 } else if(tail(asset$score,1)==1){
-  print("Strategy is currently 100% cash")
+  print("Strategy is currently 0.5 levered")
 } else if(tail(asset$score,1)==0){
   print("Strategy is currently 100% cash")
-}
+} 
 
 ## Total Backtest Performance
 output <- merge(asset[,c("strat", "Return")],bmk[,"Benchmark_3X_Buy_and_Hold"])
