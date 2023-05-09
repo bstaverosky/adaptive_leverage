@@ -140,11 +140,21 @@ asset$p2hsig <- NA
 asset$vol_rat_bak <- asset$vol_rat
 asset$vol_rat     <- 1/asset$vol_rat
 
+# for(i in 257:nrow(asset)){
+#   print(i)
+#   #asset[i, "smasig"] <- tail(scale_vector_mean(asset[(i-256):i,"sma_rat"],0,0.333,0.1665),1)
+#   asset[i, "volsig"] <- tail(scale_vector_mean(asset[(i-256):i,"vol_rat"],0,0.333,0.1665),1)
+#   #asset[i, "p2hsig"] <- tail(scale_vector_mean(asset[(i-256):i,"p2h"],0,0.333,0.1665),1)
+# }
+
+
 for(i in 257:nrow(asset)){
   print(i)
-  asset[i, "smasig"] <- tail(scale_vector_mean(asset[(i-256):i,"sma_rat"],0,0.333,0.1665),1)
-  asset[i, "volsig"] <- tail(scale_vector_mean(asset[(i-256):i,"vol_rat"],0,0.333,0.1665),1)
-  asset[i, "p2hsig"] <- tail(scale_vector_mean(asset[(i-256):i,"p2h"],0,0.333,0.1665),1)
+  if(asset[i,"vol_rat"]>1){
+    asset[i, "volsig"] <- (asset[i,"vol_rat"] - 1) + 1
+  } else if (asset[i,"vol_rat"]<1){
+    asset[i, "volsig"] <- (1 - max(0, 1 - asset[i,"vol_rat"]))
+  }
 }
 
 
@@ -152,7 +162,8 @@ for(i in 257:nrow(asset)){
 #asset$volsig <- scale_vector_mean(1/asset$vol_rat,0,1,0.3)
 #asset$p2hsig <- scale_vector_mean(asset$p2h,0,1,0.3)
 
-asset$score <- rowSums(asset[,c("smasig","volsig","p2hsig")])
+#asset$score <- rowSums(asset[,c("smasig","volsig","p2hsig")])
+asset$score <- rowSums(asset[,"volsig"])
 ##### LAGGED SIGNAL FOR ROBUSTNESS #####
 asset$score <- lag(asset$score, k=1)
 # asset$strat <- ifelse(asset$score==0,asset$Return*0.0,
@@ -160,7 +171,7 @@ asset$score <- lag(asset$score, k=1)
 #                ifelse(asset$score==2,asset$Return*0.9,
 #                ifelse(asset$score==3,asset$Return*3,0))))
 
-asset$strat <- (asset$score*2) * asset$Return
+asset$strat <- (asset$score) * asset$Return
 
 # Get Benchmark
 bmk <- "SPY"
