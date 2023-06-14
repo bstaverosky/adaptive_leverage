@@ -38,6 +38,7 @@ asset$Close <- na.locf(asset$Close)
 ##### USER INPUTS #####
 smathres <- 1
 volthres <- 1
+#volthres <- 0.925
 p2hthres <- 0.9
 svoldays <- 65
 lvoldays <- 252
@@ -165,9 +166,9 @@ asset$score <- rowSums(asset[,c("smasig","volsig","p2hsig")])
 ##### LAGGED SIGNAL FOR ROBUSTNESS #####
 asset$score <- stats::lag(asset$score, k=1)
 asset$strat <- ifelse(asset$score==0,asset$Return*0.0,
-               ifelse(asset$score==1,asset$Return*0.5,
-               ifelse(asset$score==2,asset$Return*0.9,
-               ifelse(asset$score==3,asset$Return*3,0))))
+               ifelse(asset$score==1,asset$Return*0.0,
+               ifelse(asset$score==2,asset$Return*1,
+               ifelse(asset$score==3,asset$Return*1,0))))
 
 # Get Benchmark
 bmk <- "SPY"
@@ -247,8 +248,6 @@ names(output) <- c("AdaptiveLeverage", "S&P500", "3X S&P500 Buy and Hold")
 charts.PerformanceSummary(output, main = "Adaptive Leverage Strategy Performance")
 print(Sys.time())
 
-
-
 ## Trailing 1-Year Performance
 
 output <- tail(merge(asset[,c("strat", "Return")],bmk[,"Benchmark_3X_Buy_and_Hold"]), 256)
@@ -305,26 +304,26 @@ kable(retdf,
 
 ## Rolling Sharpe Ratio
 
-rollsr <- lapply(253:nrow(strat), FUN = function(x){
-  dte <- index(strat)[[x]]
-  sr  <- SharpeRatio.annualized(strat[,"strat"][(x-252):x], scale = 252)
-  output <- data.frame(Date = dte,
-                       SharpeRatio = sr)
-  output
-})
-
-rollsr <- do.call("rbind", rollsr)
-rollsr <- rollsr[which(rollsr$Date == unique(rollsr$Date)),]
-rownames(rollsr) <- rollsr$Date
-rollsr <- tail(rollsr, 5000)
-
-
-ggplot(data = rollsr, aes(x = Date, y = strat))+
-  geom_hline(yintercept = 0, color = "black", alpha = 0.5)+
-  geom_line(color = "red", size = 1) + 
-  ggtitle("Rolling 1-Year SharpeRatio") +
-  xlab("Date") +
-  ylab("Sharpe Ratio")
+# rollsr <- lapply(253:nrow(strat), FUN = function(x){
+#   dte <- index(strat)[[x]]
+#   sr  <- SharpeRatio.annualized(strat[,"strat"][(x-252):x], scale = 252)
+#   output <- data.frame(Date = dte,
+#                        SharpeRatio = sr)
+#   output
+# })
+# 
+# rollsr <- do.call("rbind", rollsr)
+# rollsr <- rollsr[which(rollsr$Date == unique(rollsr$Date)),]
+# rownames(rollsr) <- rollsr$Date
+# rollsr <- tail(rollsr, 5000)
+# 
+# 
+# ggplot(data = rollsr, aes(x = Date, y = strat))+
+#   geom_hline(yintercept = 0, color = "black", alpha = 0.5)+
+#   geom_line(color = "red", size = 1) + 
+#   ggtitle("Rolling 1-Year SharpeRatio") +
+#   xlab("Date") +
+#   ylab("Sharpe Ratio")
 
 ## Consistency Chart
 
@@ -389,5 +388,9 @@ kable(table.Drawdowns(strat, top = 5, digits = 4, geometric = TRUE),
       format = "html",
       booktabs = T) %>%
   kable_styling(latex_options = c("striped", "scale_down"))
+
+# Export Final Asset DataFrame as a CSV
+write.zoo(asset, "/home/bstaverosky/Documents/projects/adaptive_leverage/asset_output.csv", sep=",")
+
 
 

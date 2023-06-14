@@ -8,9 +8,7 @@ library(kableExtra)
 library(ggplot2)
 library(ggthemes)
 library(xtable)
-source("/home/brian/Documents/projects/scripts/adhoc_functions.R")
-
-### THIS IS A TEST ###
+#source("/home/brian/Documents/projects/scripts/adhoc_functions.R")
 
 asset <- "SPY"
 asset <- getSymbols(asset, src = "yahoo", from = "1900-01-01", auto.assign = FALSE)
@@ -147,6 +145,7 @@ asset$vol_rat     <- 1/asset$vol_rat
 #   #asset[i, "p2hsig"] <- tail(scale_vector_mean(asset[(i-256):i,"p2h"],0,0.333,0.1665),1)
 # }
 
+### VOL RATIO CONTINUOUS
 
 for(i in 257:nrow(asset)){
   print(i)
@@ -157,13 +156,34 @@ for(i in 257:nrow(asset)){
   }
 }
 
+for(i in 257:nrow(asset)){
+  print(i)
+  if(asset[i,"sma_rat"]>1){
+    asset[i, "smasig"] <- (asset[i,"sma_rat"] - 1) + 1
+  } else if (asset[i,"sma_rat"]<1){
+    asset[i, "smasig"] <- (1 - max(0, 1 - asset[i,"sma_rat"]))
+  }
+}
+
+for(i in 257:nrow(asset)){
+  print(i)
+  if(asset[i,"p2h"]>0.9){
+    asset[i, "p2hsig"] <- (asset[i,"p2h"] - 0.9) + 1
+  } else if (asset[i,"p2h"]<1){
+    asset[i, "p2hsig"] <- (1 - max(0, 0.9 - asset[i,"p2h"]))
+  }
+}
+
 
 #asset$smasig <- scale_vector_mean(asset$sma_rat, 0, 1, 0.3)
 #asset$volsig <- scale_vector_mean(1/asset$vol_rat,0,1,0.3)
 #asset$p2hsig <- scale_vector_mean(asset$p2h,0,1,0.3)
 
 #asset$score <- rowSums(asset[,c("smasig","volsig","p2hsig")])
-asset$score <- rowSums(asset[,"volsig"])
+asset$score <- rowSums(asset[,"p2hsig"])
+#asset$score <- rowSums(asset[,c("volsig","smasig","p2hsig")])/3
+asset$score <- ifelse(asset$score>=1, asset$score*1, 
+               ifelse(asset$score<0.95, asset$score *0, asset$score*1))
 ##### LAGGED SIGNAL FOR ROBUSTNESS #####
 asset$score <- lag(asset$score, k=1)
 # asset$strat <- ifelse(asset$score==0,asset$Return*0.0,
@@ -319,7 +339,7 @@ ggplot(data = rollact, aes(x = Date, y = strat))+
   geom_hline(yintercept = 0, color = "black", alpha = 0.5)+
   geom_line(color = "red", size = 1)
 
-## Chart Drawdowns
+## Chart Drawdowns``
 strat <- asset[,"strat"]
 chart.Drawdown(strat)
 
